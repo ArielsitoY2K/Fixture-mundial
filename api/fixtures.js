@@ -2,7 +2,8 @@ const https = require('https');
 
 module.exports = async function handler(req, res) {
     const API_KEY = process.env.SPORTS_API_KEY;
-    const url = 'https://v2.football.sportsapipro.com/api/world-cup-2026/fixtures';
+    // Añadimos el parámetro estricto de paginación ?page=0 dictado por la documentación
+    const url = 'https://v2.football.sportsapipro.com/api/world-cup-2026/matches?page=0';
 
     const options = {
         headers: {
