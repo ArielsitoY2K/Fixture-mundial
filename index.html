@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mundial 2026 - Live Centro de Datos</title>
+    <title>Mundial 2026 - Live Data Center</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         .tab-active {
@@ -17,16 +17,23 @@
     <header class="bg-gray-800 border-b border-gray-700 py-5 px-6 shadow-lg">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="text-center sm:text-left">
-                <h1 class="text-2xl font-black tracking-wider text-emerald-400 uppercase">Copa del Mundo FIFA 2026</h1>
-                <p class="text-gray-400 text-xs mt-0.5">Centro de Monitoreo — Football V2 Engine</p>
+                <h1 id="lbl-title" class="text-2xl font-black tracking-wider text-emerald-400 uppercase">Copa del Mundo FIFA 2026</h1>
+                <p id="lbl-subtitle" class="text-gray-400 text-xs mt-0.5">Centro de Monitoreo — Football V2 Engine</p>
             </div>
             
-            <div class="flex items-center space-x-3 bg-gray-900/60 px-4 py-2 rounded-full border border-gray-700">
-                <span class="text-xs font-semibold text-gray-400" id="refresh-status">Auto-refresco (60s)</span>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="toggle-refresh" checked onchange="toggleAutoRefresh()" class="sr-only peer">
-                    <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                </label>
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex bg-gray-900 rounded-lg p-0.5 border border-gray-700 text-xs font-bold">
+                    <button id="lang-es" onclick="changeLanguage('es')" class="px-3 py-1.5 rounded-md bg-emerald-500 text-white transition-all cursor-pointer">ES</button>
+                    <button id="lang-en" onclick="changeLanguage('en')" class="px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition-all cursor-pointer">EN</button>
+                </div>
+
+                <div class="flex items-center space-x-3 bg-gray-900/60 px-4 py-2 rounded-lg border border-gray-700">
+                    <span class="text-xs font-semibold text-gray-400" id="refresh-status">Auto-refresco (60s)</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggle-refresh" checked onchange="toggleAutoRefresh()" class="sr-only peer">
+                        <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
             </div>
         </div>
     </header>
@@ -46,14 +53,14 @@
         
         <div id="loading" class="text-center py-12">
             <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500 mx-auto"></div>
-            <p class="text-gray-400 text-xs mt-3">Sincronizando con el servidor seguro...</p>
+            <p id="lbl-loading" class="text-gray-400 text-xs mt-3">Sincronizando con el servidor seguro...</p>
         </div>
         
         <div id="error-msg" class="hidden bg-red-950/60 border border-red-700 text-red-200 p-4 rounded-xl text-center mb-6"></div>
 
         <section id="section-fixture" class="space-y-6">
             <div class="flex flex-wrap justify-between items-center gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                <h2 id="lbl-section-match-title" class="text-lg font-bold text-emerald-400 flex items-center gap-2">
                     <span class="flex h-2 w-2 relative" id="live-dot-container">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -61,9 +68,9 @@
                     Partidos del Torneo
                 </h2>
                 <select id="filter-stage" onchange="filterMatches()" class="bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer">
-                    <option value="all">Todos los partidos</option>
-                    <option value="group">Fase de Grupos</option>
-                    <option value="knockout">Fase Eliminatoria</option>
+                    <option value="all" id="opt-all">Todos los partidos</option>
+                    <option value="group" id="opt-group">Fase de Grupos</option>
+                    <option value="knockout" id="opt-knockout">Fase Eliminatoria</option>
                 </select>
             </div>
 
@@ -75,7 +82,7 @@
     </main>
 
     <footer class="bg-gray-800 border-t border-gray-700 py-4 text-center text-[11px] text-gray-500 mt-auto">
-        <p>Estructura adaptada eficientemente a las directivas de SportsApiPro V2</p>
+        <p id="lbl-footer">Estructura adaptada eficientemente a las directivas de SportsApiPro V2</p>
     </footer>
 
     <script>
@@ -85,11 +92,94 @@
         let allMatches = [];
         let allStandings = [];
         let refreshInterval = null;
+        let currentLang = 'es';
+
+        // Diccionario de Traducciones
+        const i18n = {
+            es: {
+                title: "Copa del Mundo FIFA 2026", subtitle: "Centro de Monitoreo — Football V2 Engine",
+                tabFixture: "🏆 Fixture / Partidos", tabStandings: "📊 Tablas de Posiciones",
+                loading: "Sincronizando con el servidor seguro...", titleSectionMatch: "Partidos del Torneo",
+                optAll: "Todos los partidos", optGroup: "Fase de Grupos", optKnockout: "Fase Eliminatoria",
+                footer: "Estructura adaptada eficientemente a las directivas de SportsApiPro V2",
+                refreshOn: "Auto-refresco (60s)", refreshOff: "Refresco Desactivado",
+                noMatches: "Organizando grilla de partidos...", noStandings: "Organizando grupos...",
+                live: "• EN VIVO", finished: "Finalizado", stadiumFallback: "Estadio por confirmar",
+                thTeam: "Equipo", thPJ: "PJ", thDG: "DG", thPts: "Pts"
+            },
+            en: {
+                title: "FIFA World Cup 2026", subtitle: "Monitoring Center — Football V2 Engine",
+                tabFixture: "🏆 Fixture / Matches", tabStandings: "📊 Standings",
+                loading: "Syncing with secure server...", titleSectionMatch: "Tournament Matches",
+                optAll: "All matches", optGroup: "Group Stage", optKnockout: "Knockout Stage",
+                footer: "Structure efficiently adapted to SportsApiPro V2 directives",
+                refreshOn: "Auto-refresh (60s)", refreshOff: "Refresh Disabled",
+                noMatches: "Organizing match grid...", noStandings: "Organizing groups...",
+                live: "• LIVE", finished: "Finished", stadiumFallback: "Stadium to be confirmed",
+                thTeam: "Team", thPJ: "PL", thDG: "GD", thPts: "Pts"
+            }
+        };
+
+        // Diccionario de Emojis para Banderas Mundialistas (Soporta EN/ES)
+        const emojiFlags = {
+            "argentina": "🇦🇷", "brazil": "🇧🇷", "brasil": "🇧🇷", "mexico": "🇲🇽", "méxico": "🇲🇽",
+            "usa": "🇺🇸", "united states": "🇺🇸", "estados unidos": "🇺🇸", "canada": "🇨🇦", "canadá": "🇨🇦",
+            "france": "🇫🇷", "francia": "🇫🇷", "germany": "🇩🇪", "alemania": "🇩🇪", "spain": "🇪🇸", "españa": "🇪🇸",
+            "italy": "🇮🇹", "italia": "🇮🇹", "england": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "portugal": "🇵🇹",
+            "netherlands": "🇳🇱", "países bajos": "🇳🇱", "belgium": "🇧🇪", "bélgica": "🇧🇪", "croatia": "🇭🇷", "croacia": "🇭🇷",
+            "morocco": "🇲🇦", "marruecos": "🇲🇦", "japan": "🇯🇵", "japón": "🇯🇵", "south korea": "🇰🇷", "corea del sur": "🇰🇷",
+            "uruguay": "🇺🇾", "colombia": "🇨🇴", "chile": "🇨🇱", "ecuador": "🇪🇨", "peru": "🇵🇪", "perú": "🇵🇪",
+            "senegal": "🇸🇳", "ghana": "🇬🇭", "cameroon": "🇨🇲", "camerún": "🇨🇲", "tunisia": "🇹🇳", "túnez": "🇹🇳",
+            "saudi arabia": "🇸🇦", "arabia saudita": "🇸🇦", "australia": "🇦🇺", "switzerland": "🇨🇭", "suiza": "🇨🇭",
+            "denmark": "🇩🇰", "dinamarca": "🇩🇰", "poland": "🇵🇱", "polonia": "🇵🇱", "ukraine": "🇺🇦", "ucrania": "🇺🇦",
+            "south africa": "🇿🇦", "sudáfrica": "🇿🇦", "czech republic": "🇨🇿", "república checa": "🇨🇿"
+        };
+
+        function getFlagEmoji(countryName) {
+            if (!countryName) return "⚽";
+            const cleanName = countryName.toLowerCase().trim();
+            return emojiFlags[cleanName] || "⚽";
+        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             await fetchWorldCupData();
             setupAutoRefresh();
         });
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            
+            // Alternar clases activas del botón de idioma
+            const btnEs = document.getElementById('lang-es');
+            const btnEn = document.getElementById('lang-en');
+            if(lang === 'es') {
+                btnEs.className = "px-3 py-1.5 rounded-md bg-emerald-500 text-white transition-all cursor-pointer";
+                btnEn.className = "px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition-all cursor-pointer";
+            } else {
+                btnEn.className = "px-3 py-1.5 rounded-md bg-emerald-500 text-white transition-all cursor-pointer";
+                btnEs.className = "px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition-all cursor-pointer";
+            }
+
+            // Traducir textos estáticos
+            document.getElementById('lbl-title').innerText = i18n[lang].title;
+            document.getElementById('lbl-subtitle').innerText = i18n[lang].subtitle;
+            document.getElementById('btn-fixture').innerText = i18n[lang].tabFixture;
+            document.getElementById('btn-standings').innerText = i18n[lang].tabStandings;
+            document.getElementById('lbl-loading').innerText = i18n[lang].loading;
+            document.getElementById('opt-all').innerText = i18n[lang].optAll;
+            document.getElementById('opt-group').innerText = i18n[lang].optGroup;
+            document.getElementById('opt-knockout').innerText = i18n[lang].optKnockout;
+            document.getElementById('lbl-footer').innerText = i18n[lang].footer;
+            
+            // Actualizar texto de auto-refresh
+            const isChecked = document.getElementById('toggle-refresh').checked;
+            document.getElementById('refresh-status').innerText = isChecked ? i18n[lang].refreshOn : i18n[lang].refreshOff;
+
+            // Re-renderizar datos dinámicos con el nuevo idioma
+            renderFixture(allMatches);
+            renderStandings(allStandings);
+            updateLiveStatusDot();
+        }
 
         function switchTab(tab) {
             const btnFixture = document.getElementById('btn-fixture');
@@ -114,7 +204,6 @@
             }
         }
 
-        // Extractor recursivo inteligente para mapear el JSON dinámico de la V2
         function autoExtractArray(obj) {
             if (!obj || typeof obj !== 'object') return null;
             if (Array.isArray(obj)) return obj;
@@ -139,7 +228,6 @@
         }
 
         async function fetchWorldCupData() {
-            // El loading nativo solo se muestra la primera vez para no parpadear en los refrescos automáticos
             if (allMatches.length === 0) {
                 document.getElementById('loading').classList.remove('hidden');
             }
@@ -166,19 +254,18 @@
             } catch (error) {
                 console.error(error);
                 const errorDiv = document.getElementById('error-msg');
-                errorDiv.innerHTML = `⚠️ <strong>Sincronización pausada:</strong> Comprueba la conexión o las cuotas de tu API Key.`;
+                errorDiv.innerHTML = `⚠️ Sincronización demorada / Sync delayed.`;
                 errorDiv.classList.remove('hidden');
             } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
         }
 
-        // Control del temporizador automático
         function setupAutoRefresh() {
             if (refreshInterval) clearInterval(refreshInterval);
             refreshInterval = setInterval(async () => {
                 await fetchWorldCupData();
-            }, 60000); // Consulta cada 60 segundos
+            }, 60000);
         }
 
         function toggleAutoRefresh() {
@@ -187,25 +274,25 @@
             
             if (isChecked) {
                 setupAutoRefresh();
-                statusText.innerText = "Auto-refresco (60s)";
-                statusText.classList.remove('text-gray-500');
-                statusText.classList.add('text-gray-400');
+                statusText.innerText = i18n[currentLang].refreshOn;
             } else {
                 if (refreshInterval) clearInterval(refreshInterval);
-                statusText.innerText = "Refresco Desactivado";
-                statusText.classList.remove('text-gray-400');
-                statusText.classList.add('text-gray-500');
+                statusText.innerText = i18n[currentLang].refreshOff;
             }
         }
 
         function updateLiveStatusDot() {
             const hasLiveMatches = allMatches.some(m => m.status === 'live' || m.live === true);
             const dotContainer = document.getElementById('live-dot-container');
-            if (dotContainer) {
+            const titleLabel = document.getElementById('lbl-section-match-title');
+            
+            if (dotContainer && titleLabel) {
+                titleLabel.innerHTML = `<span class="flex h-2 w-2 relative" id="live-dot-container"></span> ${i18n[currentLang].titleSectionMatch}`;
+                const innerDot = titleLabel.querySelector('#live-dot-container');
                 if (hasLiveMatches) {
-                    dotContainer.innerHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>`;
+                    innerDot.innerHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>`;
                 } else {
-                    document.getElementById('filter-stage').parentNode.querySelector('h2').innerHTML = `⚽ Partidos del Torneo`;
+                    innerDot.innerHTML = `<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>`;
                 }
             }
         }
@@ -215,7 +302,7 @@
             container.innerHTML = '';
 
             if (matches.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8 text-sm">Organizando grilla de partidos...</p>';
+                container.innerHTML = `<p class="text-gray-400 text-center col-span-full py-8 text-sm">${i18n[currentLang].noMatches}</p>`;
                 return;
             }
 
@@ -224,9 +311,9 @@
                 const isFinished = match.status === 'finished' || match.status === 'FT';
                 
                 const rawDate = match.date || match.datetime || match.timestamp;
-                const matchDate = rawDate ? new Date(rawDate).toLocaleDateString('es-ES', {
+                const matchDate = rawDate ? new Date(rawDate).toLocaleDateString(currentLang === 'es' ? 'es-ES' : 'en-US', {
                     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                }) : 'Programado';
+                }) : 'TBD';
 
                 const homeNode = match.home_team || match.homeTeam || match.team_home || match.home;
                 const awayNode = match.away_team || match.awayTeam || match.team_away || match.away;
@@ -234,40 +321,41 @@
                 const homeName = homeNode?.name || homeNode?.team_name || 'Local';
                 const awayName = awayNode?.name || awayNode?.team_name || 'Visitante';
                 
-                const homeFlag = homeNode?.flag || homeNode?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + homeName.substring(0,2);
-                const awayFlag = awayNode?.flag || awayNode?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + awayName.substring(0,2);
+                // Optimización de Banderas: Usamos strings de emojis directos
+                const homeEmoji = getFlagEmoji(homeName);
+                const awayEmoji = getFlagEmoji(awayName);
                 
                 const homeScore = match.home_score ?? match.scores?.home ?? match.homeTeamScore ?? '-';
                 const awayScore = match.away_score ?? match.scores?.away ?? match.awayTeamScore ?? '-';
 
                 const card = document.createElement('div');
-                card.className = `bg-gray-800 border ${isLive ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-700'} rounded-xl p-4 flex flex-col justify-between shadow-md transition-all`;
+                card.className = `bg-gray-800 border ${isLive ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-700'} rounded-xl p-4 flex flex-col justify-between shadow-md`;
                 
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-3">
-                        <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-gray-700 text-emerald-400 uppercase tracking-wider">${match.group_name || match.stage || 'Fase de Grupos'}</span>
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-gray-700 text-emerald-400 uppercase tracking-wider">${match.group_name || match.stage || match.round_name || 'FIFA'}</span>
                         <span class="text-[11px] ${isLive ? 'text-red-400 font-extrabold animate-pulse' : 'text-gray-400'}">
-                            ${isLive ? '• EN VIVO' : isFinished ? 'Finalizado' : matchDate}
+                            ${isLive ? i18n[currentLang].live : isFinished ? i18n[currentLang].finished : matchDate}
                         </span>
                     </div>
                     <div class="space-y-3 py-1">
                         <div class="flex justify-between items-center">
                             <div class="flex items-center space-x-3">
-                                <img src="${homeFlag}" class="w-6 h-4 object-cover rounded shadow-sm">
+                                <span class="text-xl leading-none">${homeEmoji}</span>
                                 <span class="font-medium text-sm text-gray-200">${homeName}</span>
                             </div>
-                            <span class="text-lg font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${homeScore !== null && homeScore !== undefined ? homeScore : '-'}</span>
+                            <span class="text-lg font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${homeScore}</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <div class="flex items-center space-x-3">
-                                <img src="${awayFlag}" class="w-6 h-4 object-cover rounded shadow-sm">
+                                <span class="text-xl leading-none">${awayEmoji}</span>
                                 <span class="font-medium text-sm text-gray-200">${awayName}</span>
                             </div>
-                            <span class="text-lg font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${awayScore !== null && awayScore !== undefined ? awayScore : '-'}</span>
+                            <span class="text-lg font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${awayScore}</span>
                         </div>
                     </div>
                     <div class="mt-3 pt-2 border-t border-gray-700/60 text-left">
-                        <p class="text-[11px] text-gray-500 truncate">📍 ${match.venue || match.stadium || 'Estadio por confirmar'}</p>
+                        <p class="text-[11px] text-gray-500 truncate">📍 ${match.venue || match.stadium || i18n[currentLang].stadiumFallback}</p>
                     </div>
                 `;
                 container.appendChild(card);
@@ -290,7 +378,7 @@
             container.innerHTML = '';
 
             if (standings.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8 text-sm">Organizando grupos...</p>';
+                container.innerHTML = `<p class="text-gray-400 text-center col-span-full py-8 text-sm">${i18n[currentLang].noStandings}</p>`;
                 return;
             }
 
@@ -303,14 +391,14 @@
                 
                 teamsList.forEach((team, index) => {
                     const rowHighlight = index < 2 ? 'bg-emerald-950/20 text-emerald-300' : 'text-gray-300';
-                    const teamName = team.name || team.team_name || team.team?.name || 'Equipo';
-                    const teamFlag = team.flag || team.logo || team.team?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + teamName.substring(0,2);
+                    const teamName = team.name || team.team_name || team.team?.name || 'Team';
+                    const teamEmoji = getFlagEmoji(teamName);
                     
                     tbodyRows += `
                         <tr class="border-b border-gray-700/40 hover:bg-gray-700/30 transition ${rowHighlight}">
                             <td class="px-2 py-2 text-center text-xs font-bold">${index + 1}</td>
                             <td class="px-2 py-2 flex items-center space-x-2">
-                                <img src="${teamFlag}" class="w-5 h-3.5 object-cover rounded shadow-xs">
+                                <span class="text-base leading-none">${teamEmoji}</span>
                                 <span class="truncate font-medium text-xs">${teamName}</span>
                             </td>
                             <td class="px-2 py-2 text-center font-semibold text-gray-100 text-xs">${team.played ?? team.pj ?? team.matches_played ?? 0}</td>
@@ -321,15 +409,15 @@
                 });
 
                 groupCard.innerHTML = `
-                    <h3 class="text-sm font-extrabold text-emerald-400 border-b border-gray-700 pb-2 mb-2 uppercase tracking-wider">${group.group_name || group.name || 'Grupo'}</h3>
+                    <h3 class="text-sm font-extrabold text-emerald-400 border-b border-gray-700 pb-2 mb-2 uppercase tracking-wider">${group.group_name || group.name || 'Group'}</h3>
                     <table class="w-full text-xs text-left">
                         <thead>
                             <tr class="text-gray-400 border-b border-gray-700 uppercase bg-gray-900/40">
-                                <th class="px-2 py-1 text-center w-8">#</th>
-                                <th class="px-2 py-1">Equipo</th>
-                                <th class="px-2 py-1 text-center w-8">PJ</th>
-                                <th class="px-2 py-1 text-center w-8">DG</th>
-                                <th class="px-2 py-1 text-center w-8 text-emerald-400">Pts</th>
+                                <th class="px-2 py-1 text-center w-8">${i18n[currentLang].thRank || '#'}</th>
+                                <th class="px-2 py-1">${i18n[currentLang].thTeam}</th>
+                                <th class="px-2 py-1 text-center w-8">${i18n[currentLang].thPJ}</th>
+                                <th class="px-2 py-1 text-center w-8">${i18n[currentLang].thDG}</th>
+                                <th class="px-2 py-1 text-center w-8 text-emerald-400">${i18n[currentLang].thPts}</th>
                             </tr>
                         </thead>
                         <tbody>
