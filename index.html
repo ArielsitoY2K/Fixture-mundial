@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mundial 2026 - Fixture y Posiciones</title>
+    <title>Mundial 2026 - Live Centro de Datos</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         .tab-active {
@@ -14,9 +14,21 @@
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col">
 
-    <header class="bg-gray-800 border-b border-gray-700 py-6 text-center shadow-lg">
-        <h1 class="text-3xl font-extrabold tracking-wider text-emerald-400 uppercase">Copa del Mundo FIFA 2026</h1>
-        <p class="text-gray-400 text-sm mt-1">Calendario de Partidos y Tablas de Grupos (Vía Backend Seguro)</p>
+    <header class="bg-gray-800 border-b border-gray-700 py-5 px-6 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="text-center sm:text-left">
+                <h1 class="text-2xl font-black tracking-wider text-emerald-400 uppercase">Copa del Mundo FIFA 2026</h1>
+                <p class="text-gray-400 text-xs mt-0.5">Centro de Monitoreo — Football V2 Engine</p>
+            </div>
+            
+            <div class="flex items-center space-x-3 bg-gray-900/60 px-4 py-2 rounded-full border border-gray-700">
+                <span class="text-xs font-semibold text-gray-400" id="refresh-status">Auto-refresco (60s)</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="toggle-refresh" checked onchange="toggleAutoRefresh()" class="sr-only peer">
+                    <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+            </div>
+        </div>
     </header>
 
     <div class="max-w-7xl mx-auto px-4 w-full mt-6">
@@ -30,24 +42,28 @@
         </div>
     </div>
 
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
         
         <div id="loading" class="text-center py-12">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500 mx-auto"></div>
-            <p class="text-gray-400 mt-4">Cargando datos desde nuestro servidor proxy...</p>
+            <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500 mx-auto"></div>
+            <p class="text-gray-400 text-xs mt-3">Sincronizando con el servidor seguro...</p>
         </div>
         
-        <div id="error-msg" class="hidden bg-red-950/60 border border-red-700 text-red-200 p-4 rounded-xl text-center mb-6">
-            ⚠️ Hubo un problema al procesar la solicitud en el backend.
-        </div>
+        <div id="error-msg" class="hidden bg-red-950/60 border border-red-700 text-red-200 p-4 rounded-xl text-center mb-6"></div>
 
         <section id="section-fixture" class="space-y-6">
             <div class="flex flex-wrap justify-between items-center gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h2 class="text-xl font-bold text-emerald-400">Calendario Oficial</h2>
-                <select id="filter-stage" onchange="filterMatches()" class="bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer">
-                    <option value="all">Ver Todos los Partidos</option>
+                <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                    <span class="flex h-2 w-2 relative" id="live-dot-container">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    Partidos del Torneo
+                </h2>
+                <select id="filter-stage" onchange="filterMatches()" class="bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer">
+                    <option value="all">Todos los partidos</option>
                     <option value="group">Fase de Grupos</option>
-                    <option value="knockout">Fase de Eliminación Directa</option>
+                    <option value="knockout">Fase Eliminatoria</option>
                 </select>
             </div>
 
@@ -58,19 +74,21 @@
 
     </main>
 
-    <footer class="bg-gray-800 border-t border-gray-700 py-6 text-center text-xs text-gray-500 mt-auto">
-        <p>Datos protegidos y servidos a través de Vercel Serverless Functions</p>
+    <footer class="bg-gray-800 border-t border-gray-700 py-4 text-center text-[11px] text-gray-500 mt-auto">
+        <p>Estructura adaptada eficientemente a las directivas de SportsApiPro V2</p>
     </footer>
 
- <script>
+    <script>
         const API_FIXTURES_URL = '/api/fixtures';
         const API_STANDINGS_URL = '/api/standings';
 
         let allMatches = [];
         let allStandings = [];
+        let refreshInterval = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             await fetchWorldCupData();
+            setupAutoRefresh();
         });
 
         function switchTab(tab) {
@@ -96,62 +114,99 @@
             }
         }
 
-        // Lógica de extracción ultra-robusta de matrices (Arrays)
+        // Extractor recursivo inteligente para mapear el JSON dinámico de la V2
+        function autoExtractArray(obj) {
+            if (!obj || typeof obj !== 'object') return null;
+            if (Array.isArray(obj)) return obj;
+            
+            const commonKeys = ['matches', 'groups', 'data', 'results', 'response', 'items', 'standings'];
+            for (let key of commonKeys) {
+                if (obj[key] && Array.isArray(obj[key])) return obj[key];
+                if (obj[key] && typeof obj[key] === 'object') {
+                    for (let subKey of commonKeys) {
+                        if (obj[key][subKey] && Array.isArray(obj[key][subKey])) return obj[key][subKey];
+                    }
+                }
+            }
+            for (let key in obj) {
+                if (Array.isArray(obj[key])) return obj[key];
+                if (obj[key] && typeof obj[key] === 'object') {
+                    let deepFound = autoExtractArray(obj[key]);
+                    if (deepFound) return deepFound;
+                }
+            }
+            return null;
+        }
+
         async function fetchWorldCupData() {
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('error-msg').classList.add('hidden');
+            // El loading nativo solo se muestra la primera vez para no parpadear en los refrescos automáticos
+            if (allMatches.length === 0) {
+                document.getElementById('loading').classList.remove('hidden');
+            }
             
             try {
-                const handleFetch = async (url, label) => {
+                const handleFetch = async (url) => {
                     const res = await fetch(url);
-                    if (!res.ok) {
-                        const errBody = await res.json().catch(() => ({}));
-                        throw new Error(`${label} (${res.status}): ${errBody.error || res.statusText}`);
-                    }
+                    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
                     return res.json();
                 };
 
                 const [fixturesRes, standingsRes] = await Promise.all([
-                    handleFetch(API_FIXTURES_URL, 'Partidos'),
-                    handleFetch(API_STANDINGS_URL, 'Posiciones')
+                    handleFetch(API_FIXTURES_URL),
+                    handleFetch(API_STANDINGS_URL)
                 ]);
 
-                // --- EXTRACTOR INTELIGENTE DE PARTIDOS ---
-                if (Array.isArray(fixturesRes)) {
-                    allMatches = fixturesRes;
-                } else if (fixturesRes && Array.isArray(fixturesRes.matches)) {
-                    allMatches = fixturesRes.matches;
-                } else if (fixturesRes && fixturesRes.data) {
-                    if (Array.isArray(fixturesRes.data)) {
-                        allMatches = fixturesRes.data;
-                    } else if (Array.isArray(fixturesRes.data.matches)) {
-                        allMatches = fixturesRes.data.matches;
-                    }
-                }
-
-                // --- EXTRACTOR INTELIGENTE DE GRUPOS/POSICIONES ---
-                if (Array.isArray(standingsRes)) {
-                    allStandings = standingsRes;
-                } else if (standingsRes && Array.isArray(standingsRes.groups)) {
-                    allStandings = standingsRes.groups;
-                } else if (standingsRes && standingsRes.data) {
-                    if (Array.isArray(standingsRes.data)) {
-                        allStandings = standingsRes.data;
-                    } else if (Array.isArray(standingsRes.data.groups)) {
-                        allStandings = standingsRes.data.groups;
-                    }
-                }
+                allMatches = autoExtractArray(fixturesRes) || [];
+                allStandings = autoExtractArray(standingsRes) || [];
 
                 renderFixture(allMatches);
                 renderStandings(allStandings);
+                updateLiveStatusDot();
 
             } catch (error) {
                 console.error(error);
                 const errorDiv = document.getElementById('error-msg');
-                errorDiv.innerHTML = `⚠️ <strong>Error en la aplicación:</strong> ${error.message}`;
+                errorDiv.innerHTML = `⚠️ <strong>Sincronización pausada:</strong> Comprueba la conexión o las cuotas de tu API Key.`;
                 errorDiv.classList.remove('hidden');
             } finally {
                 document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // Control del temporizador automático
+        function setupAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(async () => {
+                await fetchWorldCupData();
+            }, 60000); // Consulta cada 60 segundos
+        }
+
+        function toggleAutoRefresh() {
+            const isChecked = document.getElementById('toggle-refresh').checked;
+            const statusText = document.getElementById('refresh-status');
+            
+            if (isChecked) {
+                setupAutoRefresh();
+                statusText.innerText = "Auto-refresco (60s)";
+                statusText.classList.remove('text-gray-500');
+                statusText.classList.add('text-gray-400');
+            } else {
+                if (refreshInterval) clearInterval(refreshInterval);
+                statusText.innerText = "Refresco Desactivado";
+                statusText.classList.remove('text-gray-400');
+                statusText.classList.add('text-gray-500');
+            }
+        }
+
+        function updateLiveStatusDot() {
+            const hasLiveMatches = allMatches.some(m => m.status === 'live' || m.live === true);
+            const dotContainer = document.getElementById('live-dot-container');
+            if (dotContainer) {
+                if (hasLiveMatches) {
+                    dotContainer.innerHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>`;
+                } else {
+                    document.getElementById('filter-stage').parentNode.querySelector('h2').innerHTML = `⚽ Partidos del Torneo`;
+                }
             }
         }
 
@@ -159,35 +214,39 @@
             const container = document.getElementById('fixture-container');
             container.innerHTML = '';
 
-            if (!matches || matches.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8">No se encontraron partidos en el formato esperado.</p>';
+            if (matches.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8 text-sm">Organizando grilla de partidos...</p>';
                 return;
             }
 
             matches.forEach(match => {
-                const isLive = match.status === 'live';
-                const isFinished = match.status === 'finished';
+                const isLive = match.status === 'live' || match.live === true;
+                const isFinished = match.status === 'finished' || match.status === 'FT';
                 
-                const matchDate = match.date ? new Date(match.date).toLocaleDateString('es-ES', {
+                const rawDate = match.date || match.datetime || match.timestamp;
+                const matchDate = rawDate ? new Date(rawDate).toLocaleDateString('es-ES', {
                     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                }) : 'Fecha por definir';
+                }) : 'Programado';
 
-                // Nombres y banderas con fallbacks seguros por si cambian las propiedades de la API
-                const homeName = match.home_team?.name || match.homeTeam?.name || 'Local';
-                const awayName = match.away_team?.name || match.awayTeam?.name || 'Visitante';
-                const homeFlag = match.home_team?.flag || match.homeTeam?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + homeName.substring(0,2);
-                const awayFlag = match.away_team?.flag || match.awayTeam?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + awayName.substring(0,2);
+                const homeNode = match.home_team || match.homeTeam || match.team_home || match.home;
+                const awayNode = match.away_team || match.awayTeam || match.team_away || match.away;
+
+                const homeName = homeNode?.name || homeNode?.team_name || 'Local';
+                const awayName = awayNode?.name || awayNode?.team_name || 'Visitante';
                 
-                const homeScore = match.home_score !== undefined ? match.home_score : (match.scores?.home !== undefined ? match.scores.home : '-');
-                const awayScore = match.away_score !== undefined ? match.away_score : (match.scores?.away !== undefined ? match.scores.away : '-');
+                const homeFlag = homeNode?.flag || homeNode?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + homeName.substring(0,2);
+                const awayFlag = awayNode?.flag || awayNode?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + awayName.substring(0,2);
+                
+                const homeScore = match.home_score ?? match.scores?.home ?? match.homeTeamScore ?? '-';
+                const awayScore = match.away_score ?? match.scores?.away ?? match.awayTeamScore ?? '-';
 
                 const card = document.createElement('div');
-                card.className = `bg-gray-800 border ${isLive ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-gray-700'} rounded-xl p-4 flex flex-col justify-between shadow-md`;
+                card.className = `bg-gray-800 border ${isLive ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-700'} rounded-xl p-4 flex flex-col justify-between shadow-md transition-all`;
                 
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-3">
-                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-gray-700 text-emerald-400 uppercase tracking-wider">${match.group_name || match.stage || 'Fase de Grupos'}</span>
-                        <span class="text-xs ${isLive ? 'text-emerald-400 font-extrabold animate-pulse' : 'text-gray-400'}">
+                        <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-gray-700 text-emerald-400 uppercase tracking-wider">${match.group_name || match.stage || 'Fase de Grupos'}</span>
+                        <span class="text-[11px] ${isLive ? 'text-red-400 font-extrabold animate-pulse' : 'text-gray-400'}">
                             ${isLive ? '• EN VIVO' : isFinished ? 'Finalizado' : matchDate}
                         </span>
                     </div>
@@ -195,20 +254,20 @@
                         <div class="flex justify-between items-center">
                             <div class="flex items-center space-x-3">
                                 <img src="${homeFlag}" class="w-6 h-4 object-cover rounded shadow-sm">
-                                <span class="font-medium text-gray-200">${homeName}</span>
+                                <span class="font-medium text-sm text-gray-200">${homeName}</span>
                             </div>
-                            <span class="text-xl font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${homeScore ?? '-'}</span>
+                            <span class="text-lg font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${homeScore !== null && homeScore !== undefined ? homeScore : '-'}</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <div class="flex items-center space-x-3">
                                 <img src="${awayFlag}" class="w-6 h-4 object-cover rounded shadow-sm">
-                                <span class="font-medium text-gray-200">${awayName}</span>
+                                <span class="font-medium text-sm text-gray-200">${awayName}</span>
                             </div>
-                            <span class="text-xl font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${awayScore ?? '-'}</span>
+                            <span class="text-lg font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${awayScore !== null && awayScore !== undefined ? awayScore : '-'}</span>
                         </div>
                     </div>
                     <div class="mt-3 pt-2 border-t border-gray-700/60 text-left">
-                        <p class="text-[11px] text-gray-500 truncate">📍 ${match.venue || 'Estadio por confirmar'}</p>
+                        <p class="text-[11px] text-gray-500 truncate">📍 ${match.venue || match.stadium || 'Estadio por confirmar'}</p>
                     </div>
                 `;
                 container.appendChild(card);
@@ -220,9 +279,9 @@
             if (criteria === 'all') {
                 renderFixture(allMatches);
             } else if (criteria === 'group') {
-                renderFixture(allMatches.filter(m => String(m.stage || m.group_name || '').toLowerCase().includes('group')));
+                renderFixture(allMatches.filter(m => String(m.stage || m.group_name || '').toLowerCase().includes('group') || m.group_id));
             } else if (criteria === 'knockout') {
-                renderFixture(allMatches.filter(m => !String(m.stage || m.group_name || '').toLowerCase().includes('group')));
+                renderFixture(allMatches.filter(m => !String(m.stage || m.group_name || '').toLowerCase().includes('group') && !m.group_id));
             }
         }
 
@@ -230,8 +289,8 @@
             const container = document.getElementById('section-standings');
             container.innerHTML = '';
 
-            if (!standings || standings.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8">No se encontraron tablas de posiciones.</p>';
+            if (standings.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8 text-sm">Organizando grupos...</p>';
                 return;
             }
 
@@ -239,38 +298,38 @@
                 const groupCard = document.createElement('div');
                 groupCard.className = "bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-lg";
                 
-                const teamsList = group.teams || group.standings || [];
+                const teamsList = group.teams || group.standings || group.rows || [];
                 let tbodyRows = '';
                 
                 teamsList.forEach((team, index) => {
                     const rowHighlight = index < 2 ? 'bg-emerald-950/20 text-emerald-300' : 'text-gray-300';
-                    const teamName = team.name || team.team_name || 'Equipo';
-                    const teamFlag = team.flag || team.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + teamName.substring(0,2);
+                    const teamName = team.name || team.team_name || team.team?.name || 'Equipo';
+                    const teamFlag = team.flag || team.logo || team.team?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + teamName.substring(0,2);
                     
                     tbodyRows += `
                         <tr class="border-b border-gray-700/40 hover:bg-gray-700/30 transition ${rowHighlight}">
                             <td class="px-2 py-2 text-center text-xs font-bold">${index + 1}</td>
                             <td class="px-2 py-2 flex items-center space-x-2">
                                 <img src="${teamFlag}" class="w-5 h-3.5 object-cover rounded shadow-xs">
-                                <span class="truncate font-medium">${teamName}</span>
+                                <span class="truncate font-medium text-xs">${teamName}</span>
                             </td>
-                            <td class="px-2 py-2 text-center font-semibold text-gray-100">${team.played ?? team.pj ?? 0}</td>
-                            <td class="px-2 py-2 text-center text-xs font-semibold">${(team.goal_difference ?? team.dg ?? 0) >= 0 ? '+' + (team.goal_difference ?? team.dg ?? 0) : (team.goal_difference ?? team.dg ?? 0)}</td>
-                            <td class="px-2 py-2 text-center font-bold text-white">${team.points ?? team.pts ?? 0}</td>
+                            <td class="px-2 py-2 text-center font-semibold text-gray-100 text-xs">${team.played ?? team.pj ?? team.matches_played ?? 0}</td>
+                            <td class="px-2 py-2 text-center text-xs font-semibold">${(team.goal_difference ?? team.dg ?? team.gd ?? 0) >= 0 ? '+' + (team.goal_difference ?? team.dg ?? team.gd ?? 0) : (team.goal_difference ?? team.dg ?? team.gd ?? 0)}</td>
+                            <td class="px-2 py-2 text-center font-bold text-white text-xs">${team.points ?? team.pts ?? 0}</td>
                         </tr>
                     `;
                 });
 
                 groupCard.innerHTML = `
-                    <h3 class="text-base font-extrabold text-emerald-400 border-b border-gray-700 pb-2 mb-2 uppercase tracking-wider">${group.group_name || group.name || 'Grupo'}</h3>
+                    <h3 class="text-sm font-extrabold text-emerald-400 border-b border-gray-700 pb-2 mb-2 uppercase tracking-wider">${group.group_name || group.name || 'Grupo'}</h3>
                     <table class="w-full text-xs text-left">
                         <thead>
                             <tr class="text-gray-400 border-b border-gray-700 uppercase bg-gray-900/40">
-                                <th class="px-2 py-2 text-center w-8">#</th>
-                                <th class="px-2 py-2">Equipo</th>
-                                <th class="px-2 py-2 text-center w-8">PJ</th>
-                                <th class="px-2 py-2 text-center w-8">DG</th>
-                                <th class="px-2 py-2 text-center w-8 text-emerald-400">Pts</th>
+                                <th class="px-2 py-1 text-center w-8">#</th>
+                                <th class="px-2 py-1">Equipo</th>
+                                <th class="px-2 py-1 text-center w-8">PJ</th>
+                                <th class="px-2 py-1 text-center w-8">DG</th>
+                                <th class="px-2 py-1 text-center w-8 text-emerald-400">Pts</th>
                             </tr>
                         </thead>
                         <tbody>
