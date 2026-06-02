@@ -2,7 +2,8 @@ const https = require('https');
 
 module.exports = async function handler(req, res) {
     const API_KEY = process.env.SPORTS_API_KEY;
-    const url = 'https://v2.football.sportsapipro.com/api/world-cup-2026/fixtures';
+    // Si la tabla de posiciones se obtiene con /groups, cambia 'standings' por 'groups' aquí abajo
+    const url = 'https://v2.football.sportsapipro.com/api/world-cup-2026/standings';
 
     const options = {
         headers: {
