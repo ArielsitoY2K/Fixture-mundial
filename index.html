@@ -1,91 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mundial 2026 - Live Data Center</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style>
-        .tab-active {
-            border-bottom: 4px solid #10b981;
-            color: #10b981;
-        }
-    </style>
-</head>
-<body class="bg-gray-900 text-gray-100 font-sans min-h-screen flex flex-col">
-
-    <header class="bg-gray-800 border-b border-gray-700 py-5 px-6 shadow-lg">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="text-center sm:text-left">
-                <h1 id="lbl-title" class="text-2xl font-black tracking-wider text-emerald-400 uppercase">Copa del Mundo FIFA 2026</h1>
-                <p id="lbl-subtitle" class="text-gray-400 text-xs mt-0.5">Centro de Monitoreo — Football V2 Engine</p>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="flex bg-gray-900 rounded-lg p-0.5 border border-gray-700 text-xs font-bold">
-                    <button id="lang-es" onclick="changeLanguage('es')" class="px-3 py-1.5 rounded-md bg-emerald-500 text-white transition-all cursor-pointer">ES</button>
-                    <button id="lang-en" onclick="changeLanguage('en')" class="px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition-all cursor-pointer">EN</button>
-                </div>
-
-                <div class="flex items-center space-x-3 bg-gray-900/60 px-4 py-2 rounded-lg border border-gray-700">
-                    <span class="text-xs font-semibold text-gray-400" id="refresh-status">Auto-refresco (60s)</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="toggle-refresh" checked onchange="toggleAutoRefresh()" class="sr-only peer">
-                        <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </label>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <div class="max-w-7xl mx-auto px-4 w-full mt-6">
-        <div class="flex border-b border-gray-700 justify-center space-x-8">
-            <button id="btn-fixture" onclick="switchTab('fixture')" class="py-3 px-6 font-bold text-lg focus:outline-none transition-all tab-active cursor-pointer">
-                🏆 Fixture / Partidos
-            </button>
-            <button id="btn-standings" onclick="switchTab('standings')" class="py-3 px-6 font-bold text-lg focus:outline-none text-gray-400 hover:text-white transition-all cursor-pointer">
-                📊 Tablas de Posiciones
-            </button>
-        </div>
-    </div>
-
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
-        
-        <div id="loading" class="text-center py-12">
-            <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500 mx-auto"></div>
-            <p id="lbl-loading" class="text-gray-400 text-xs mt-3">Sincronizando con el servidor seguro...</p>
-        </div>
-        
-        <div id="error-msg" class="hidden bg-red-950/60 border border-red-700 text-red-200 p-4 rounded-xl text-center mb-6"></div>
-
-        <section id="section-fixture" class="space-y-6">
-            <div class="flex flex-wrap justify-between items-center gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h2 id="lbl-section-match-title" class="text-lg font-bold text-emerald-400 flex items-center gap-2">
-                    <span class="flex h-2 w-2 relative" id="live-dot-container">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    Partidos del Torneo
-                </h2>
-                <select id="filter-stage" onchange="filterMatches()" class="bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer">
-                    <option value="all" id="opt-all">Todos los partidos</option>
-                    <option value="group" id="opt-group">Fase de Grupos</option>
-                    <option value="knockout" id="opt-knockout">Fase Eliminatoria</option>
-                </select>
-            </div>
-
-            <div id="fixture-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        </section>
-
-        <section id="section-standings" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></section>
-
-    </main>
-
-    <footer class="bg-gray-800 border-t border-gray-700 py-4 text-center text-[11px] text-gray-500 mt-auto">
-        <p id="lbl-footer">Estructura adaptada eficientemente a las directivas de SportsApiPro V2</p>
-    </footer>
-
-    <script>
+<script>
         const API_FIXTURES_URL = '/api/fixtures';
         const API_STANDINGS_URL = '/api/standings';
 
@@ -94,7 +7,7 @@
         let refreshInterval = null;
         let currentLang = 'es';
 
-        // Diccionario de Traducciones
+        // Diccionario de Traducciones e Idiomas Estáticos
         const i18n = {
             es: {
                 title: "Copa del Mundo FIFA 2026", subtitle: "Centro de Monitoreo — Football V2 Engine",
@@ -120,25 +33,74 @@
             }
         };
 
-        // Diccionario de Emojis para Banderas Mundialistas (Soporta EN/ES)
-        const emojiFlags = {
-            "argentina": "🇦🇷", "brazil": "🇧🇷", "brasil": "🇧🇷", "mexico": "🇲🇽", "méxico": "🇲🇽",
-            "usa": "🇺🇸", "united states": "🇺🇸", "estados unidos": "🇺🇸", "canada": "🇨🇦", "canadá": "🇨🇦",
-            "france": "🇫🇷", "francia": "🇫🇷", "germany": "🇩🇪", "alemania": "🇩🇪", "spain": "🇪🇸", "españa": "🇪🇸",
-            "italy": "🇮🇹", "italia": "🇮🇹", "england": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "portugal": "🇵🇹",
-            "netherlands": "🇳🇱", "países bajos": "🇳🇱", "belgium": "🇧🇪", "bélgica": "🇧🇪", "croatia": "🇭🇷", "croacia": "🇭🇷",
-            "morocco": "🇲🇦", "marruecos": "🇲🇦", "japan": "🇯🇵", "japón": "🇯🇵", "south korea": "🇰🇷", "corea del sur": "🇰🇷",
-            "uruguay": "🇺🇾", "colombia": "🇨🇴", "chile": "🇨🇱", "ecuador": "🇪🇨", "peru": "🇵🇪", "perú": "🇵🇪",
-            "senegal": "🇸🇳", "ghana": "🇬🇭", "cameroon": "🇨🇲", "camerún": "🇨🇲", "tunisia": "🇹🇳", "túnez": "🇹🇳",
-            "saudi arabia": "🇸🇦", "arabia saudita": "🇸🇦", "australia": "🇦🇺", "switzerland": "🇨🇭", "suiza": "🇨🇭",
-            "denmark": "🇩🇰", "dinamarca": "🇩🇰", "poland": "🇵🇱", "polonia": "🇵🇱", "ukraine": "🇺🇦", "ucrania": "🇺🇦",
-            "south africa": "🇿🇦", "sudáfrica": "🇿🇦", "czech republic": "🇨🇿", "república checa": "🇨🇿"
+        // Diccionario maestro de Equipos: Centraliza traducción y banderas usando códigos ISO o nombres fijos de la API
+        // Nota: Asegúrate de que las llaves coincidan con cómo te envía los nombres tu API (usualmente en inglés)
+        const teamDatabase = {
+            "argentina": { es: "Argentina", en: "Argentina", flag: "🇦🇷" },
+            "brazil": { es: "Brasil", en: "Brazil", flag: "🇧🇷" },
+            "mexico": { es: "México", en: "Mexico", flag: "🇲🇽" },
+            "usa": { es: "Estados Unidos", en: "USA", flag: "🇺🇸" },
+            "united states": { es: "Estados Unidos", en: "USA", flag: "🇺🇸" },
+            "canada": { es: "Canadá", en: "Canada", flag: "🇨🇦" },
+            "france": { es: "Francia", en: "France", flag: "🇫🇷" },
+            "germany": { es: "Alemania", en: "Germany", flag: "🇩🇪" },
+            "spain": { es: "España", en: "Spain", flag: "🇪🇸" },
+            "italy": { es: "Italia", en: "Italy", flag: "🇮🇹" },
+            "england": { es: "Inglaterra", en: "England", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+            "portugal": { es: "Portugal", en: "Portugal", flag: "🇵🇹" },
+            "netherlands": { es: "Países Bajos", en: "Netherlands", flag: "🇳🇱" },
+            "belgium": { es: "Bélgica", en: "Belgium", flag: "🇧🇪" },
+            "croatia": { es: "Croacia", en: "Croatia", flag: "🇭🇷" },
+            "morocco": { es: "Marruecos", en: "Morocco", flag: "🇲🇦" },
+            "japan": { es: "Japón", en: "Japan", flag: "🇯🇵" },
+            "south korea": { es: "Corea del Sur", en: "South Korea", flag: "🇰🇷" },
+            "qatar": { es: "Catar", en: "Qatar", flag: "🇶🇦" },
+            "switzerland": { es: "Suiza", en: "Switzerland", flag: "🇨🇭" },
+            "paraguay": { es: "Paraguay", en: "Paraguay", flag: "🇵🇾" },
+            "czechia": { es: "República Checa", en: "Czechia", flag: "🇨🇿" },
+            "czech republic": { es: "República Checa", en: "Czech Republic", flag: "🇨🇿" },
+            "bosnia & herzegovina": { es: "Bosnia y Herzegovina", en: "Bosnia & Herzegovina", flag: "🇧🇦" },
+            "bosnia and herzegovina": { es: "Bosnia y Herzegovina", en: "Bosnia & Herzegovina", flag: "🇧🇦" },
+            "uruguay": { es: "Uruguay", en: "Uruguay", flag: "🇺🇾" },
+            "colombia": { es: "Colombia", en: "Colombia", flag: "🇨🇴" },
+            "chile": { es: "Chile", en: "Chile", flag: "🇨🇱" },
+            "ecuador": { es: "Ecuador", en: "Ecuador", flag: "🇪🇨" },
+            "peru": { es: "Perú", en: "Peru", flag: "🇵🇪" },
+            "senegal": { es: "Senegal", en: "Senegal", flag: "🇸🇳" },
+            "ghana": { es: "Ghana", en: "Ghana", flag: "🇬🇭" },
+            "cameroon": { es: "Camerún", en: "Cameroon", flag: "🇨🇲" },
+            "tunisia": { es: "Túnez", en: "Tunisia", flag: "🇹🇳" },
+            "saudi arabia": { es: "Arabia Saudita", en: "Saudi Arabia", flag: "🇸🇦" },
+            "australia": { es: "Australia", en: "Australia", flag: "🇦🇺" },
+            "denmark": { es: "Dinamarca", en: "Denmark", flag: "🇩🇰" },
+            "poland": { es: "Polonia", en: "Poland", flag: "🇵🇱" },
+            "ukraine": { es: "Ucrania", en: "Ukraine", flag: "🇺🇦" },
+            "south africa": { es: "Sudáfrica", en: "South Africa", flag: "🇿🇦" }
         };
 
-        function getFlagEmoji(countryName) {
-            if (!countryName) return "⚽";
-            const cleanName = countryName.toLowerCase().trim();
-            return emojiFlags[cleanName] || "⚽";
+        // Función ayudante para obtener datos traducidos del equipo
+        function getTeamData(rawName) {
+            if (!rawName) return { name: 'TBD', flag: '⚽' };
+            const clean = rawName.toLowerCase().trim();
+            
+            if (teamDatabase[clean]) {
+                return {
+                    name: teamDatabase[clean][currentLang],
+                    flag: teamDatabase[clean].flag
+                };
+            }
+            // Fallback por si la API trae un nombre que no mapeamos
+            return { name: rawName, flag: '⚽' };
+        }
+
+        // Helper para resolver el bug de [object Object] en el Venue / Estadio
+        function parseVenue(venueNode) {
+            if (!venueNode) return null;
+            if (typeof venueNode === 'object') {
+                // Intenta buscar nombres legibles dentro del objeto de la API
+                return venueNode.name || venueNode.name_es || venueNode.stadium_name || null;
+            }
+            return String(venueNode);
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -149,7 +111,6 @@
         function changeLanguage(lang) {
             currentLang = lang;
             
-            // Alternar clases activas del botón de idioma
             const btnEs = document.getElementById('lang-es');
             const btnEn = document.getElementById('lang-en');
             if(lang === 'es') {
@@ -160,7 +121,6 @@
                 btnEs.className = "px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition-all cursor-pointer";
             }
 
-            // Traducir textos estáticos
             document.getElementById('lbl-title').innerText = i18n[lang].title;
             document.getElementById('lbl-subtitle').innerText = i18n[lang].subtitle;
             document.getElementById('btn-fixture').innerText = i18n[lang].tabFixture;
@@ -171,11 +131,9 @@
             document.getElementById('opt-knockout').innerText = i18n[lang].optKnockout;
             document.getElementById('lbl-footer').innerText = i18n[lang].footer;
             
-            // Actualizar texto de auto-refresh
             const isChecked = document.getElementById('toggle-refresh').checked;
             document.getElementById('refresh-status').innerText = isChecked ? i18n[lang].refreshOn : i18n[lang].refreshOff;
 
-            // Re-renderizar datos dinámicos con el nuevo idioma
             renderFixture(allMatches);
             renderStandings(allStandings);
             updateLiveStatusDot();
@@ -283,10 +241,9 @@
 
         function updateLiveStatusDot() {
             const hasLiveMatches = allMatches.some(m => m.status === 'live' || m.live === true);
-            const dotContainer = document.getElementById('live-dot-container');
             const titleLabel = document.getElementById('lbl-section-match-title');
             
-            if (dotContainer && titleLabel) {
+            if (titleLabel) {
                 titleLabel.innerHTML = `<span class="flex h-2 w-2 relative" id="live-dot-container"></span> ${i18n[currentLang].titleSectionMatch}`;
                 const innerDot = titleLabel.querySelector('#live-dot-container');
                 if (hasLiveMatches) {
@@ -318,15 +275,19 @@
                 const homeNode = match.home_team || match.homeTeam || match.team_home || match.home;
                 const awayNode = match.away_team || match.awayTeam || match.team_away || match.away;
 
-                const homeName = homeNode?.name || homeNode?.team_name || 'Local';
-                const awayName = awayNode?.name || awayNode?.team_name || 'Visitante';
+                const rawHomeName = homeNode?.name || homeNode?.team_name || '';
+                const rawAwayName = awayNode?.name || awayNode?.team_name || '';
                 
-                // Optimización de Banderas: Usamos strings de emojis directos
-                const homeEmoji = getFlagEmoji(homeName);
-                const awayEmoji = getFlagEmoji(awayName);
+                // Mapeo unificado de traducción y banderas
+                const homeData = getTeamData(rawHomeName);
+                const awayData = getTeamData(rawAwayName);
                 
                 const homeScore = match.home_score ?? match.scores?.home ?? match.homeTeamScore ?? '-';
                 const awayScore = match.away_score ?? match.scores?.away ?? match.awayTeamScore ?? '-';
+
+                // Resolver el nombre del estadio/venue de forma segura
+                const rawVenue = match.venue || match.stadium || match.stadium_name;
+                const venueName = parseVenue(rawVenue) || i18n[currentLang].stadiumFallback;
 
                 const card = document.createElement('div');
                 card.className = `bg-gray-800 border ${isLive ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-700'} rounded-xl p-4 flex flex-col justify-between shadow-md`;
@@ -341,21 +302,21 @@
                     <div class="space-y-3 py-1">
                         <div class="flex justify-between items-center">
                             <div class="flex items-center space-x-3">
-                                <span class="text-xl leading-none">${homeEmoji}</span>
-                                <span class="font-medium text-sm text-gray-200">${homeName}</span>
+                                <span class="text-xl leading-none">${homeData.flag}</span>
+                                <span class="font-medium text-sm text-gray-200">${homeData.name}</span>
                             </div>
                             <span class="text-lg font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${homeScore}</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <div class="flex items-center space-x-3">
-                                <span class="text-xl leading-none">${awayEmoji}</span>
-                                <span class="font-medium text-sm text-gray-200">${awayName}</span>
+                                <span class="text-xl leading-none">${awayData.flag}</span>
+                                <span class="font-medium text-sm text-gray-200">${awayData.name}</span>
                             </div>
                             <span class="text-lg font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${awayScore}</span>
                         </div>
                     </div>
                     <div class="mt-3 pt-2 border-t border-gray-700/60 text-left">
-                        <p class="text-[11px] text-gray-500 truncate">📍 ${match.venue || match.stadium || i18n[currentLang].stadiumFallback}</p>
+                        <p class="text-[11px] text-gray-500 truncate">📍 ${venueName}</p>
                     </div>
                 `;
                 container.appendChild(card);
@@ -391,15 +352,16 @@
                 
                 teamsList.forEach((team, index) => {
                     const rowHighlight = index < 2 ? 'bg-emerald-950/20 text-emerald-300' : 'text-gray-300';
-                    const teamName = team.name || team.team_name || team.team?.name || 'Team';
-                    const teamEmoji = getFlagEmoji(teamName);
+                    const rawTeamName = team.name || team.team_name || team.team?.name || '';
+                    
+                    const teamData = getTeamData(rawTeamName);
                     
                     tbodyRows += `
                         <tr class="border-b border-gray-700/40 hover:bg-gray-700/30 transition ${rowHighlight}">
                             <td class="px-2 py-2 text-center text-xs font-bold">${index + 1}</td>
                             <td class="px-2 py-2 flex items-center space-x-2">
-                                <span class="text-base leading-none">${teamEmoji}</span>
-                                <span class="truncate font-medium text-xs">${teamName}</span>
+                                <span class="text-base leading-none">${teamData.flag}</span>
+                                <span class="truncate font-medium text-xs">${teamData.name}</span>
                             </td>
                             <td class="px-2 py-2 text-center font-semibold text-gray-100 text-xs">${team.played ?? team.pj ?? team.matches_played ?? 0}</td>
                             <td class="px-2 py-2 text-center text-xs font-semibold">${(team.goal_difference ?? team.dg ?? team.gd ?? 0) >= 0 ? '+' + (team.goal_difference ?? team.dg ?? team.gd ?? 0) : (team.goal_difference ?? team.dg ?? team.gd ?? 0)}</td>
@@ -429,5 +391,3 @@
             });
         }
     </script>
-</body>
-</html>
