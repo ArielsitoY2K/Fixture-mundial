@@ -62,8 +62,7 @@
         <p>Datos protegidos y servidos a través de Vercel Serverless Functions</p>
     </footer>
 
-    <script>
-        // Apuntamos a las rutas internas de nuestro backend de Vercel
+   <script>
         const API_FIXTURES_URL = '/api/fixtures';
         const API_STANDINGS_URL = '/api/standings';
 
@@ -97,21 +96,25 @@
             }
         }
 
+        // Nueva lógica de extracción de errores detallados
         async function fetchWorldCupData() {
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('error-msg').classList.add('hidden');
             
             try {
-                // Hacemos las peticiones en paralelo a nuestro propio servidor
+                const handleFetch = async (url, label) => {
+                    const res = await fetch(url);
+                    if (!res.ok) {
+                        // Intentamos extraer el mensaje de error estructurado del backend
+                        const errBody = await res.json().catch(() => ({}));
+                        throw new Error(`${label} (Error ${res.status}): ${errBody.error || res.statusText}`);
+                    }
+                    return res.json();
+                };
+
                 const [fixturesRes, standingsRes] = await Promise.all([
-                    fetch(API_FIXTURES_URL).then(r => {
-                        if (!r.ok) throw new Error(`Backend Fixtures Error (${r.status})`);
-                        return r.json();
-                    }),
-                    fetch(API_STANDINGS_URL).then(r => {
-                        if (!r.ok) throw new Error(`Backend Standings Error (${r.status})`);
-                        return r.json();
-                    })
+                    handleFetch(API_FIXTURES_URL, 'Partidos'),
+                    handleFetch(API_STANDINGS_URL, 'Posiciones')
                 ]);
 
                 if (fixturesRes && fixturesRes.data) allMatches = fixturesRes.data;
@@ -123,7 +126,7 @@
             } catch (error) {
                 console.error(error);
                 const errorDiv = document.getElementById('error-msg');
-                errorDiv.innerHTML = `⚠️ Error al conectar con el backend: <strong>${error.message}</strong>.`;
+                errorDiv.innerHTML = `⚠️ <strong>Error en la aplicación:</strong> ${error.message}`;
                 errorDiv.classList.remove('hidden');
             } finally {
                 document.getElementById('loading').classList.add('hidden');
