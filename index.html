@@ -62,7 +62,7 @@
         <p>Datos protegidos y servidos a través de Vercel Serverless Functions</p>
     </footer>
 
-   <script>
+ <script>
         const API_FIXTURES_URL = '/api/fixtures';
         const API_STANDINGS_URL = '/api/standings';
 
@@ -96,7 +96,7 @@
             }
         }
 
-        // Nueva lógica de extracción de errores detallados
+        // Lógica de extracción ultra-robusta de matrices (Arrays)
         async function fetchWorldCupData() {
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('error-msg').classList.add('hidden');
@@ -105,9 +105,8 @@
                 const handleFetch = async (url, label) => {
                     const res = await fetch(url);
                     if (!res.ok) {
-                        // Intentamos extraer el mensaje de error estructurado del backend
                         const errBody = await res.json().catch(() => ({}));
-                        throw new Error(`${label} (Error ${res.status}): ${errBody.error || res.statusText}`);
+                        throw new Error(`${label} (${res.status}): ${errBody.error || res.statusText}`);
                     }
                     return res.json();
                 };
@@ -117,8 +116,31 @@
                     handleFetch(API_STANDINGS_URL, 'Posiciones')
                 ]);
 
-                if (fixturesRes && fixturesRes.data) allMatches = fixturesRes.data;
-                if (standingsRes && standingsRes.data) allStandings = standingsRes.data;
+                // --- EXTRACTOR INTELIGENTE DE PARTIDOS ---
+                if (Array.isArray(fixturesRes)) {
+                    allMatches = fixturesRes;
+                } else if (fixturesRes && Array.isArray(fixturesRes.matches)) {
+                    allMatches = fixturesRes.matches;
+                } else if (fixturesRes && fixturesRes.data) {
+                    if (Array.isArray(fixturesRes.data)) {
+                        allMatches = fixturesRes.data;
+                    } else if (Array.isArray(fixturesRes.data.matches)) {
+                        allMatches = fixturesRes.data.matches;
+                    }
+                }
+
+                // --- EXTRACTOR INTELIGENTE DE GRUPOS/POSICIONES ---
+                if (Array.isArray(standingsRes)) {
+                    allStandings = standingsRes;
+                } else if (standingsRes && Array.isArray(standingsRes.groups)) {
+                    allStandings = standingsRes.groups;
+                } else if (standingsRes && standingsRes.data) {
+                    if (Array.isArray(standingsRes.data)) {
+                        allStandings = standingsRes.data;
+                    } else if (Array.isArray(standingsRes.data.groups)) {
+                        allStandings = standingsRes.data.groups;
+                    }
+                }
 
                 renderFixture(allMatches);
                 renderStandings(allStandings);
@@ -128,7 +150,7 @@
                 const errorDiv = document.getElementById('error-msg');
                 errorDiv.innerHTML = `⚠️ <strong>Error en la aplicación:</strong> ${error.message}`;
                 errorDiv.classList.remove('hidden');
-            } finally {
+            } finaly {
                 document.getElementById('loading').classList.add('hidden');
             }
         }
@@ -137,8 +159,8 @@
             const container = document.getElementById('fixture-container');
             container.innerHTML = '';
 
-            if (matches.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8">No hay partidos disponibles.</p>';
+            if (!matches || matches.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8">No se encontraron partidos en el formato esperado.</p>';
                 return;
             }
 
@@ -146,34 +168,43 @@
                 const isLive = match.status === 'live';
                 const isFinished = match.status === 'finished';
                 
-                const formattedDate = new Date(match.date).toLocaleDateString('es-ES', {
+                const matchDate = match.date ? new Date(match.date).toLocaleDateString('es-ES', {
                     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                });
+                }) : 'Fecha por definir';
+
+                // Nombres y banderas con fallbacks seguros por si cambian las propiedades de la API
+                const homeName = match.home_team?.name || match.homeTeam?.name || 'Local';
+                const awayName = match.away_team?.name || match.awayTeam?.name || 'Visitante';
+                const homeFlag = match.home_team?.flag || match.homeTeam?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + homeName.substring(0,2);
+                const awayFlag = match.away_team?.flag || match.awayTeam?.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + awayName.substring(0,2);
+                
+                const homeScore = match.home_score !== undefined ? match.home_score : (match.scores?.home !== undefined ? match.scores.home : '-');
+                const awayScore = match.away_score !== undefined ? match.away_score : (match.scores?.away !== undefined ? match.scores.away : '-');
 
                 const card = document.createElement('div');
-                card.className = `bg-gray-800 border ${isLive ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-gray-700'} rounded-xl p-4 flex flex-col justify-between shadow-md transition-all hover:scale-[1.01]`;
+                card.className = `bg-gray-800 border ${isLive ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-gray-700'} rounded-xl p-4 flex flex-col justify-between shadow-md`;
                 
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-3">
-                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-gray-700 text-emerald-400 uppercase tracking-wider">${match.group_name || match.stage}</span>
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-gray-700 text-emerald-400 uppercase tracking-wider">${match.group_name || match.stage || 'Fase de Grupos'}</span>
                         <span class="text-xs ${isLive ? 'text-emerald-400 font-extrabold animate-pulse' : 'text-gray-400'}">
-                            ${isLive ? '• EN VIVO' : isFinished ? 'Finalizado' : formattedDate}
+                            ${isLive ? '• EN VIVO' : isFinished ? 'Finalizado' : matchDate}
                         </span>
                     </div>
                     <div class="space-y-3 py-1">
                         <div class="flex justify-between items-center">
                             <div class="flex items-center space-x-3">
-                                <img src="${match.home_team.flag || 'https://placehold.co/40x26/22c55e/ffffff?text=' + match.home_team.name.substring(0,2)}" class="w-6 h-4 object-cover rounded shadow-sm">
-                                <span class="font-medium text-gray-200">${match.home_team.name}</span>
+                                <img src="${homeFlag}" class="w-6 h-4 object-cover rounded shadow-sm">
+                                <span class="font-medium text-gray-200">${homeName}</span>
                             </div>
-                            <span class="text-xl font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${match.home_score !== null ? match.home_score : '-'}</span>
+                            <span class="text-xl font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${homeScore ?? '-'}</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <div class="flex items-center space-x-3">
-                                <img src="${match.away_team.flag || 'https://placehold.co/40x26/22c55e/ffffff?text=' + match.away_team.name.substring(0,2)}" class="w-6 h-4 object-cover rounded shadow-sm">
-                                <span class="font-medium text-gray-200">${match.away_team.name}</span>
+                                <img src="${awayFlag}" class="w-6 h-4 object-cover rounded shadow-sm">
+                                <span class="font-medium text-gray-200">${awayName}</span>
                             </div>
-                            <span class="text-xl font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${match.away_score !== null ? match.away_score : '-'}</span>
+                            <span class="text-xl font-bold ${isFinished || isLive ? 'text-white' : 'text-gray-500'}">${awayScore ?? '-'}</span>
                         </div>
                     </div>
                     <div class="mt-3 pt-2 border-t border-gray-700/60 text-left">
@@ -189,9 +220,9 @@
             if (criteria === 'all') {
                 renderFixture(allMatches);
             } else if (criteria === 'group') {
-                renderFixture(allMatches.filter(m => m.stage.toLowerCase().includes('group') || m.group_name));
+                renderFixture(allMatches.filter(m => String(m.stage || m.group_name || '').toLowerCase().includes('group')));
             } else if (criteria === 'knockout') {
-                renderFixture(allMatches.filter(m => !m.stage.toLowerCase().includes('group') && !m.group_name));
+                renderFixture(allMatches.filter(m => !String(m.stage || m.group_name || '').toLowerCase().includes('group')));
             }
         }
 
@@ -199,8 +230,8 @@
             const container = document.getElementById('section-standings');
             container.innerHTML = '';
 
-            if (standings.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8">No hay tablas de posiciones disponibles.</p>';
+            if (!standings || standings.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center col-span-full py-8">No se encontraron tablas de posiciones.</p>';
                 return;
             }
 
@@ -208,33 +239,37 @@
                 const groupCard = document.createElement('div');
                 groupCard.className = "bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-lg";
                 
+                const teamsList = group.teams || group.standings || [];
                 let tbodyRows = '';
-                group.teams.forEach((team, index) => {
+                
+                teamsList.forEach((team, index) => {
                     const rowHighlight = index < 2 ? 'bg-emerald-950/20 text-emerald-300' : 'text-gray-300';
+                    const teamName = team.name || team.team_name || 'Equipo';
+                    const teamFlag = team.flag || team.logo || 'https://placehold.co/40x26/22c55e/ffffff?text=' + teamName.substring(0,2);
                     
                     tbodyRows += `
                         <tr class="border-b border-gray-700/40 hover:bg-gray-700/30 transition ${rowHighlight}">
                             <td class="px-2 py-2 text-center text-xs font-bold">${index + 1}</td>
                             <td class="px-2 py-2 flex items-center space-x-2">
-                                <img src="${team.flag || 'https://placehold.co/40x26/22c55e/ffffff?text=' + team.name.substring(0,2)}" class="w-5 h-3.5 object-cover rounded shadow-xs">
-                                <span class="truncate font-medium">${team.name}</span>
+                                <img src="${teamFlag}" class="w-5 h-3.5 object-cover rounded shadow-xs">
+                                <span class="truncate font-medium">${teamName}</span>
                             </td>
-                            <td class="px-2 py-2 text-center font-semibold text-gray-100">${team.played}</td>
-                            <td class="px-2 py-2 text-center text-xs font-semibold">${team.goal_difference >= 0 ? '+' + team.goal_difference : team.goal_difference}</td>
-                            <td class="px-2 py-2 text-center font-bold text-white">${team.points}</td>
+                            <td class="px-2 py-2 text-center font-semibold text-gray-100">${team.played ?? team.pj ?? 0}</td>
+                            <td class="px-2 py-2 text-center text-xs font-semibold">${(team.goal_difference ?? team.dg ?? 0) >= 0 ? '+' + (team.goal_difference ?? team.dg ?? 0) : (team.goal_difference ?? team.dg ?? 0)}</td>
+                            <td class="px-2 py-2 text-center font-bold text-white">${team.points ?? team.pts ?? 0}</td>
                         </tr>
                     `;
                 });
 
                 groupCard.innerHTML = `
-                    <h3 class="text-base font-extrabold text-emerald-400 border-b border-gray-700 pb-2 mb-2 uppercase tracking-wider">${group.group_name}</h3>
+                    <h3 class="text-base font-extrabold text-emerald-400 border-b border-gray-700 pb-2 mb-2 uppercase tracking-wider">${group.group_name || group.name || 'Grupo'}</h3>
                     <table class="w-full text-xs text-left">
                         <thead>
                             <tr class="text-gray-400 border-b border-gray-700 uppercase bg-gray-900/40">
                                 <th class="px-2 py-2 text-center w-8">#</th>
                                 <th class="px-2 py-2">Equipo</th>
-                                <th class="px-2 py-2 text-center w-8" title="Partidos Jugados">PJ</th>
-                                <th class="px-2 py-2 text-center w-8" title="Diferencia de Goles">DG</th>
+                                <th class="px-2 py-2 text-center w-8">PJ</th>
+                                <th class="px-2 py-2 text-center w-8">DG</th>
                                 <th class="px-2 py-2 text-center w-8 text-emerald-400">Pts</th>
                             </tr>
                         </thead>
