@@ -2,16 +2,15 @@ const https = require('https');
 
 module.exports = async function handler(req, res) {
     const API_KEY = process.env.SPORTS_API_KEY;
-    // IMPORTANTE: Asegúrate de que esta URL sea exactamente la que dicta tu documentación
-    const url = 'https://api.sportsapipro.com/v2/football/world-cup-2026/fixtures';
+    const url = 'https://v2.football.sportsapipro.com/api/world-cup-2026/fixtures';
 
     const options = {
         headers: {
-            'Authorization': `Bearer ${API_KEY}`,
+            'x-api-key': API_KEY,
             'Accept': 'application/json',
             'User-Agent': 'VercelServerlessFunction'
         },
-        timeout: 10000 // 10 segundos de espera máxima
+        timeout: 10000
     };
 
     return new Promise((resolve) => {
@@ -25,7 +24,7 @@ module.exports = async function handler(req, res) {
             apiResponse.on('end', () => {
                 if (apiResponse.statusCode !== 200) {
                     return resolve(res.status(apiResponse.statusCode).json({ 
-                        error: `La API respondió con código ${apiResponse.statusCode}. Detalle: ${data.substring(0, 100)}` 
+                        error: `La API respondió con código ${apiResponse.statusCode}. Detalle: ${data.substring(0, 120)}` 
                     }));
                 }
                 try {
@@ -37,7 +36,6 @@ module.exports = async function handler(req, res) {
             });
 
         }).on('error', (err) => {
-            // Esto nos dirá el código exacto del sistema (ej. ENOTFOUND si el dominio no existe)
             return resolve(res.status(500).json({ 
                 error: `Fallo de conexión en el servidor: ${err.message} [Código: ${err.code}]` 
             }));
