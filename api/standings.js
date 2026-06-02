@@ -2,11 +2,11 @@ const https = require('https');
 
 module.exports = async function handler(req, res) {
     const API_KEY = process.env.SPORTS_API_KEY;
-    const url = 'https://api.sportsapipro.com/v2/football/world-cup-2026/standings';
+    const url = 'https://v2.football.sportsapipro.com/api/world-cup-2026/fixtures';
 
     const options = {
         headers: {
-            'Authorization': `Bearer ${API_KEY}`,
+            'x-api-key': API_KEY,
             'Accept': 'application/json',
             'User-Agent': 'VercelServerlessFunction'
         },
@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
             apiResponse.on('end', () => {
                 if (apiResponse.statusCode !== 200) {
                     return resolve(res.status(apiResponse.statusCode).json({ 
-                        error: `La API respondió con código ${apiResponse.statusCode}. Detalle: ${data.substring(0, 100)}` 
+                        error: `La API respondió con código ${apiResponse.statusCode}. Detalle: ${data.substring(0, 120)}` 
                     }));
                 }
                 try {
